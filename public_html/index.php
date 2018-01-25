@@ -1,11 +1,12 @@
 <?php
 
+use Symfony\Component\Dotenv\Dotenv;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\Dotenv\Dotenv;
 
 /** @var \Composer\Autoload\ClassLoader $loader */
 $loader = require __DIR__.'/../vendor/autoload.php';
+
 (new Dotenv())->load(__DIR__.'/../.env');
 
 $request = Request::createFromGlobals();
