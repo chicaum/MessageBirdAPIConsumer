@@ -2,38 +2,37 @@
 
 declare(strict_types=1);
 
+use App\Component\RequestConverter;
+use App\Controller\MessageController;
+use MessageBird\Client;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
-use App\Controller\MainController;
 
 class Kernel {
 
-    private $environment;
+    const APP_ACCESS_KEY = 'TB07OC8eC6eMVSL6q300eAaiB';
 
-    public function __construct(string $environment) {
-        $this->environment = $environment;
+    /** @var RequestConverter */
+    private $requestConverter;
+
+    /** @var MessageController */
+    private $messageController;
+
+    public function __construct() {
+        $this->requestConverter  = new RequestConverter();
+        $this->messageController = new MessageController(
+            new Client(self::APP_ACCESS_KEY)
+        );
     }
 
     public function dispatch(Request $request): JsonResponse {
+        try {
+            $messageRequest = $this->requestConverter->convert($request);
 
-        $mainController = new MainController();
-        $response = $mainController->sendMessage($request->getContent());
-
-        return new JsonResponse([
-            'response' => $response
-        ]);
-//        $content = $request->getContent();
-//        $apiKeyLive = getenv('SMS_API_KEY_LIVE');
-//        $apiKeyTest = getenv('SMS_API_KEY_TEST');
-//        $apiEnv     = getenv('APP_ENV');
-//
-//        return new JsonResponse([
-//            'api_key_live' => $apiKeyLive,
-//            'api_key_test' => $apiKeyTest,
-//            'api_env'      => $apiEnv,
-//            'file'         => $mainController->getFile(),
-//            'content'      => $content,
-//            'time'         => \date('l jS \of F Y h:i:s A')
-//        ]);
+            return $this->messageController->sendMessage($messageRequest);
+        }
+        catch (\Exception $exception) {
+            return new JsonResponse(['message' => 'Internal server error'], 500);
+        }
     }
 }

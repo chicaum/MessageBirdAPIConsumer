@@ -17,7 +17,7 @@ final class MessageRequest {
      * @param $message
      */
     public function __construct(
-        string $recipient,
+        int $recipient,
         string $originator,
         string $message
     ) {
@@ -26,7 +26,7 @@ final class MessageRequest {
         $this->message    = $message;
     }
 
-    public function getRecipient(): string {
+    public function getRecipient(): int {
         return $this->recipient;
     }
 
