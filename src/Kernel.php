@@ -17,19 +17,23 @@ class Kernel {
     public function dispatch(Request $request): JsonResponse {
 
         $mainController = new MainController();
-
-        $content = $request->getContent();
-        $apiKeyLive = getenv('SMS_API_KEY_LIVE');
-        $apiKeyTest = getenv('SMS_API_KEY_TEST');
-        $apiEnv     = getenv('APP_ENV');
+        $response = $mainController->sendMessage($request->getContent());
 
         return new JsonResponse([
-            'api_key_live' => $apiKeyLive,
-            'api_key_test' => $apiKeyTest,
-            'api_env'      => $apiEnv,
-            'file'         => $mainController->getFile(),
-            'content'      => $content,
-            'time'         => \date('l jS \of F Y h:i:s A')
+            'response' => $response
         ]);
+//        $content = $request->getContent();
+//        $apiKeyLive = getenv('SMS_API_KEY_LIVE');
+//        $apiKeyTest = getenv('SMS_API_KEY_TEST');
+//        $apiEnv     = getenv('APP_ENV');
+//
+//        return new JsonResponse([
+//            'api_key_live' => $apiKeyLive,
+//            'api_key_test' => $apiKeyTest,
+//            'api_env'      => $apiEnv,
+//            'file'         => $mainController->getFile(),
+//            'content'      => $content,
+//            'time'         => \date('l jS \of F Y h:i:s A')
+//        ]);
     }
 }
