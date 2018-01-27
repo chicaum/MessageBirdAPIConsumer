@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
-use App\Component\RequestConverter;
-use App\Controller\MessageController;
+use App\Resources\RequestConverter;
+use App\Resources\MessageBuilder;
+use App\Controller\MainController;
 use App\Exception\BadRequestException;
 use MessageBird\Client;
 use Symfony\Component\HttpFoundation\Request;
@@ -13,28 +14,23 @@ class Kernel {
 
     const APP_ACCESS_KEY = '3B7j6ewEagFAWHwGNlxOAknSh';
 
-    /** @var RequestConverter */
-    private $requestConverter;
-
-    /** @var MessageController */
-    private $messageController;
+    /** @var MainController */
+    private $mainController;
 
     public function __construct() {
-        $this->requestConverter  = new RequestConverter();
-        $this->messageController = new MessageController(
-            new Client(self::APP_ACCESS_KEY)
-        );
+        $this->mainController = new MainController(
+            new RequestConverter(),
+            new MessageBuilder(),
+            new Client(self::APP_ACCESS_KEY));
     }
 
     public function dispatch(Request $request): JsonResponse {
         try {
-            $messageRequest = $this->requestConverter->convert($request);
-
-            return $this->messageController->sendMessage($messageRequest);
+            return $this->mainController->send($request);
         } catch(BadRequestException $exception) {
-            return new JsonResponse(['message' => $exception->getMessage()], 400);
+            return new JsonResponse(['message' => $exception->getMessage()], JsonResponse::HTTP_BAD_REQUEST);
         } catch (\Exception $exception) {
-            return new JsonResponse(['message' => '500 - Internal server error'], 500);
+            return new JsonResponse(['message' => 'Internal server error'], JsonResponse::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 }
