@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Resources;
 
 use App\Exception\BadRequestException;
+use App\Resources\Message\PlainMessage;
+use App\Resources\Message\UnicodeMessage;
 use MessageBird\Objects\Message;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -76,17 +78,26 @@ class RequestConverter
 
     /**
      * @param string $message
+     * @param bool $isUnicode
      * @throws BadRequestException
      */
-    private function verifyMessage(string $message)
+    private function verifyMessage(string $message, bool $isUnicode)
     {
-        $messageLength = strlen($message);
-        $isUnicode = strlen($message) != strlen(utf8_decode($message));
-        $smsMaxLength = $isUnicode ? MessageBuilder::MAX_UNICODE_CHARACTERS : MessageBuilder::MAX_GSM_CHARACTERS;
+        if ($isUnicode) {
+            $messageLength = mb_strlen($message, "UTF-8");
+            $smsMaxLength  = UnicodeMessage::MAX_CHARACTERS;
+        } else {
+            $messageLength = strlen($message);
+            $smsMaxLength  = PlainMessage::MAX_CHARACTERS;
+        }
 
         if ($messageLength > $smsMaxLength) {
             throw new BadRequestException(static::INVALID_MESSAGE);
         }
+    }
+
+    private function isMessageUnicode($message): bool {
+        return strlen($message) != strlen(utf8_decode($message));
     }
 
     /**
@@ -103,15 +114,18 @@ class RequestConverter
             throw new BadRequestException(static::INVALID_JSON_OBJECT, Response::HTTP_BAD_REQUEST);
         }
 
+        $isUnicode = $this->isMessageUnicode($bodyData->message);
+
         $this->verifyMandatoryFields($bodyData);
         $this->verifyRecipient($bodyData->recipient);
         $this->verifyOriginator($bodyData->originator);
-        $this->verifyMessage($bodyData->message);
+        $this->verifyMessage($bodyData->message, $isUnicode);
 
         $message             = new Message();
         $message->originator = $bodyData->originator;
         $message->recipients = [$bodyData->recipient];
         $message->body       = $bodyData->message;
+        $message->datacoding = $isUnicode ? UnicodeMessage::MESSAGE_ENCODING : PlainMessage::MESSAGE_ENCODING_AUTO;
 
         return $message;
     }

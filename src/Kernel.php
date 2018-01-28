@@ -13,6 +13,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 class Kernel {
 
     const APP_ACCESS_KEY = '3B7j6ewEagFAWHwGNlxOAknSh';
+    //const APP_ACCESS_KEY = 'MvUH703GwqedkFLZw4M0pzTR5';
 
     /** @var MainController */
     private $mainController;
@@ -20,7 +21,6 @@ class Kernel {
     public function __construct() {
         $this->mainController = new MainController(
             new RequestConverter(),
-            new MessageBuilder(),
             new Client(self::APP_ACCESS_KEY));
     }
 

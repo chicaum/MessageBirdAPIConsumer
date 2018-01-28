@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Resources;
 
-use App\Entity\MessageRequest;
+use MessageBird\Objects\Message;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -24,7 +24,7 @@ class RequestConverterTest extends TestCase
 
         $messageRequest = $this->requestConverter->convert($request);
 
-        static::assertInstanceOf(MessageRequest::class, $messageRequest);
+        static::assertInstanceOf(Message::class, $messageRequest);
     }
 
     /**
@@ -70,18 +70,6 @@ class RequestConverterTest extends TestCase
     public function testConvertFailsWithoutMessage()
     {
         $jsonObject = '{"recipient":31612345678,"originator":"MessageBird"}';
-        $request = new Request([], [], [], [], [], [], $jsonObject);
-
-        $this->requestConverter->convert($request);
-    }
-
-    /**
-     * @expectedException App\Exception\BadRequestException
-     * @expectedExceptionMessage Invalid originator - the maximum length is 11 characters
-     */
-    public function testConvertFailsWithInvalidOriginator()
-    {
-        $jsonObject = '{"recipient":31612345678,"originator":"MessageBirdSMSMessage","message":"This is a test message."}';
         $request = new Request([], [], [], [], [], [], $jsonObject);
 
         $this->requestConverter->convert($request);
