@@ -114,11 +114,10 @@ class RequestConverter
             throw new BadRequestException(static::INVALID_JSON_OBJECT, Response::HTTP_BAD_REQUEST);
         }
 
-        $isUnicode = $this->isMessageUnicode($bodyData->message);
-
         $this->verifyMandatoryFields($bodyData);
         $this->verifyRecipient($bodyData->recipient);
         $this->verifyOriginator($bodyData->originator);
+        $isUnicode = $this->isMessageUnicode($bodyData->message);
         $this->verifyMessage($bodyData->message, $isUnicode);
 
         $message             = new Message();
