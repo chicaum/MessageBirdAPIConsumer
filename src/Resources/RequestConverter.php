@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Resources;
 
-use App\Entity\MessageRequest;
 use App\Exception\BadRequestException;
+use MessageBird\Objects\Message;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -76,12 +76,12 @@ class RequestConverter
 
     /**
      * @param string $message
-     * @param bool $isUnicode
      * @throws BadRequestException
      */
-    private function verifyMessage(string $message, bool $isUnicode)
+    private function verifyMessage(string $message)
     {
         $messageLength = strlen($message);
+        $isUnicode = strlen($message) != strlen(utf8_decode($message));
         $smsMaxLength = $isUnicode ? MessageBuilder::MAX_UNICODE_CHARACTERS : MessageBuilder::MAX_GSM_CHARACTERS;
 
         if ($messageLength > $smsMaxLength) {
@@ -90,19 +90,11 @@ class RequestConverter
     }
 
     /**
-     * @param $message
-     * @return bool
-     */
-    private function isMessageUnicode($message): bool {
-        return strlen($message) != strlen(utf8_decode($message));
-    }
-
-    /**
      * @param Request $request
-     * @return MessageRequest
+     * @return Message
      * @throws BadRequestException
      */
-    public function convert(Request $request): MessageRequest
+    public function convert(Request $request): Message
     {
         $content = $request->getContent();
         $bodyData = json_decode($content);
@@ -114,15 +106,13 @@ class RequestConverter
         $this->verifyMandatoryFields($bodyData);
         $this->verifyRecipient($bodyData->recipient);
         $this->verifyOriginator($bodyData->originator);
+        $this->verifyMessage($bodyData->message);
 
-        $isUnicode = $this->isMessageUnicode($bodyData->message);
-        $this->verifyMessage($bodyData->message, $isUnicode);
+        $message             = new Message();
+        $message->originator = $bodyData->originator;
+        $message->recipients = [$bodyData->recipient];
+        $message->body       = $bodyData->message;
 
-        return new MessageRequest(
-            $bodyData->recipient,
-            $bodyData->originator,
-            $bodyData->message,
-            $isUnicode
-        );
+        return $message;
     }
 }

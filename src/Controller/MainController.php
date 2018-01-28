@@ -6,7 +6,6 @@ use App\Resources\RequestConverter;
 use App\Resources\MessageBuilder;
 use App\Exception\BadRequestException;
 use MessageBird\Client;
-use MessageBird\Objects\Message;
 use MessageBird\Exceptions\AuthenticateException;
 use MessageBird\Exceptions\BalanceException;
 use MessageBird\Exceptions\ServerException;
@@ -39,13 +38,8 @@ class MainController
         $messageRequest = $this->requestConverter->convert($request);
         $preparedMessage = $this->messageBird->prepareMessage($messageRequest);
 
-        $message             = new Message();
-        $message->originator = $preparedMessage->getOriginator();
-        $message->recipients = [$preparedMessage->getRecipient()];
-        $message->body       = $preparedMessage->getMessage();
-
         try {
-            $result = $this->client->messages->create($message);
+            $result = $this->client->messages->create($preparedMessage);
             return new JsonResponse(['message' => $result], JsonResponse::HTTP_OK);
         } catch (BadRequestException $exception) {
             return new JsonResponse(['message' => $exception->getMessage()], JsonResponse::HTTP_BAD_REQUEST);

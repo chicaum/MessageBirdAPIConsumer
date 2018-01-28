@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Resources;
 
-use App\Entity\MessageRequest;
+use MessageBird\Objects\Message;
 
 class MessageBuilder
 {
@@ -22,7 +22,7 @@ class MessageBuilder
     const MAX_UNICODE_SINGLE_MESSAGE_LENGTH        = 70;
     const MAX_UNICODE_CONCATENATED_MESSAGE_LENGTH  = 67;
 
-    public function prepareMessage(MessageRequest $messageRequest){
-        return $messageRequest;
+    public function prepareMessage(Message $message){
+        return $message;
     }
 }
