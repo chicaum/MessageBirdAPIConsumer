@@ -14,42 +14,47 @@ use MessageBird\Exceptions\ServerException;
 use MessageBird\Objects\Message;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Predis\Client as RedisClient;
 
 class MainController
 {
+    const REDIS_QUEUE = 'message-bird';
+
     /** @var Client */
     private $client;
 
     /** @var RequestConverter */
     private $requestConverter;
 
+    /** @var  RedisClient */
+    private $redisClient;
+
     public function __construct(
         RequestConverter $requestConverter,
-        Client $client
+        Client $client,
+        RedisClient $redisClient
     ) {
         $this->requestConverter = $requestConverter;
-        $this->client = $client;
+        $this->client           = $client;
+        $this->redisClient      = $redisClient;
     }
 
     public function send(Request $request): JsonResponse
     {
-        $messageRequest  = $this->requestConverter->convert($request);
-        $messageStrategy = $this->getMessageStrategy($messageRequest);
-        $messagesList    = $messageStrategy->prepareMessage();
-
         try {
+            $messageRequest  = $this->requestConverter->convert($request);
+            $messageStrategy = $this->getMessageStrategy($messageRequest);
+            $messagesList    = $messageStrategy->prepareMessage();
+
             foreach ($messagesList as $message) {
-                $this->client->messages->create($message);
+                $this->redisClient->rpush(static::REDIS_QUEUE, json_encode($message));
             }
-            return new JsonResponse(['message' =>  count($messagesList) .  ' - Message sent'], JsonResponse::HTTP_OK);
+
+            return new JsonResponse(['message' =>  'Message sent'], JsonResponse::HTTP_OK);
         } catch (BadRequestException $exception) {
             return new JsonResponse(['message' => $exception->getMessage()], JsonResponse::HTTP_BAD_REQUEST);
-        } catch (AuthenticateException $exception) {
-            return new JsonResponse(['message' => 'Unknown access key'], JsonResponse::HTTP_UNAUTHORIZED);
-        } catch (BalanceException $exception) {
-            return new JsonResponse(['message' => 'No balance'], JsonResponse::HTTP_UNAUTHORIZED);
-        } catch (ServerException $exception) {
-            return new JsonResponse(['message' => $exception->getMessage()], JsonResponse::HTTP_INTERNAL_SERVER_ERROR);
+        } catch (\Exception $exception) {
+            return new JsonResponse(['message' => 'Internal Server Error'], JsonResponse::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
